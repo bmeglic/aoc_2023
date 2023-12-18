@@ -1,6 +1,6 @@
 use nom::{
     bytes::complete::tag,
-    character::complete::{multispace0, newline, space1, u32},
+    character::complete::{digit1, multispace0, newline, space1, u64},
     multi::separated_list1,
     sequence::tuple,
     IResult,
@@ -8,21 +8,21 @@ use nom::{
 
 #[derive(Debug)]
 struct Race {
-    time: u32,
-    distance: u32,
+    time: u64,
+    distance: u64,
 }
 
-fn parse(input: &str) -> IResult<&str, Vec<Race>> {
+fn parse_part1(input: &str) -> IResult<&str, Vec<Race>> {
     let (input, (_, _, times, _)) = tuple((
         tag("Time:"),
         multispace0,
-        separated_list1(space1, u32),
+        separated_list1(space1, u64),
         newline,
     ))(input)?;
     let (input, (_, _, distances, _)) = tuple((
         tag("Distance:"),
         multispace0,
-        separated_list1(space1, u32),
+        separated_list1(space1, u64),
         newline,
     ))(input)?;
 
@@ -38,14 +38,46 @@ fn parse(input: &str) -> IResult<&str, Vec<Race>> {
     Ok((input, races))
 }
 
-fn calc_distance(time_pressed: u32, time_total: u32) -> u32 {
+fn parse_part2(input: &str) -> IResult<&str, Race> {
+    let (input, (_, _, times, _)) = tuple((
+        tag("Time:"),
+        multispace0,
+        separated_list1(space1, digit1),
+        newline,
+    ))(input)?;
+    let (input, (_, _, distances, _)) = tuple((
+        tag("Distance:"),
+        multispace0,
+        separated_list1(space1, digit1),
+        newline,
+    ))(input)?;
+
+    let time = times
+        .into_iter()
+        .collect::<String>()
+        .parse::<u64>()
+        .expect("Unable to convert number");
+
+    let distance = distances
+        .into_iter()
+        .collect::<String>()
+        .parse::<u64>()
+        .expect("Unable to convert number");
+
+    Ok((input, Race {
+        time,
+        distance,
+    }))
+}
+
+fn calc_distance(time_pressed: u64, time_total: u64) -> u64 {
     let time_left = time_total - time_pressed;
 
     time_left * time_pressed
 }
 
-fn part1(input: &str) -> u32 {
-    let (_, races) = parse(input).unwrap();
+fn part1(input: &str) -> u64 {
+    let (_, races) = parse_part1(input).unwrap();
 
     races
         .iter()
@@ -58,9 +90,23 @@ fn part1(input: &str) -> u32 {
                         0
                     }
                 })
-                .sum::<u32>()
+                .sum::<u64>()
         })
-        .product::<u32>()
+        .product::<u64>()
+}
+
+fn part2(input: &str) -> u64 {
+    let (_, race) = parse_part2(input).unwrap();
+
+    (0..race.time)
+        .map(|v| {
+            if calc_distance(v, race.time) > race.distance {
+                1
+            } else {
+                0
+            }
+        })
+        .sum::<u64>()
 }
 
 fn main() {
@@ -68,6 +114,8 @@ fn main() {
 
     let result = part1(input);
     println!("Result part 1: {result}");
+    let result = part2(input);
+    println!("Result part 2: {result}");
 }
 
 #[test]
@@ -76,4 +124,12 @@ fn test_part1() {
 Distance:  9  40  200
 ";
     assert_eq!(part1(input), 288);
+}
+
+#[test]
+fn test_part2() {
+    let input = "Time:      7  15   30
+Distance:  9  40  200
+";
+    assert_eq!(part2(input), 71503);
 }
