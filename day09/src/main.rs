@@ -41,11 +41,43 @@ fn part1(input: &str) -> i64 {
         .sum()
 }
 
+fn part2(input: &str) -> i64 {
+    let histories = parse(input);
+
+    histories
+        .iter()
+        .map(|history| {
+            let mut old_history = history.clone();
+            let mut edge: Vec<i64> = Vec::new();
+
+            loop {
+                let new_history: Vec<_> = old_history
+                    .iter()
+                    .tuple_windows()
+                    .map(|(left, right)| left - right)
+                    .collect();
+
+                edge.push(*new_history.first().unwrap());
+
+                if new_history.iter().all(|history| history == &0) {
+                    break;
+                }
+
+                old_history = new_history;
+            }
+
+            history.first().unwrap() + edge.iter().sum::<i64>()
+        })
+        .sum()
+}
+
 fn main() {
     let input = include_str!("../input.txt");
 
     let result = part1(input);
     println!("Result part 1: {result}");
+    let result = part2(input);
+    println!("Result part 2: {result}");
 }
 
 #[test]
@@ -55,4 +87,13 @@ fn test_part1() {
 10 13 16 21 30 45
 ";
     assert_eq!(part1(input), 114);
+}
+
+#[test]
+fn test_part2() {
+    let input = "0 3 6 9 12 15
+1 3 6 10 15 21
+10 13 16 21 30 45
+";
+    assert_eq!(part2(input), 2);
 }
